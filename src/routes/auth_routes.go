@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthRoutes(engine *gin.Engine, controller *controllers.AuthController) {
-	engine.POST("/auth/refresh-token", controller.RefreshToken)
-	engine.POST("/auth/login", controller.Login)
+func AuthRoutes(r *gin.RouterGroup, controller controllers.AuthControllerInterface) {
+	r.POST("/refresh-token", controller.RefreshToken)
+	r.POST("/login", controller.Login)
 }
