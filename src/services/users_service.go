@@ -24,6 +24,7 @@ func NewUsersService(env envs.Envs) *UsersService {
 type UsersServiceInterface interface {
 	Register(user users.UserDTO) (users.UserDTO, error)
 	Update(user users.UserDTO) (users.UserDTO, error)
+	GetUsersList(ids []string) ([]users.UserDTO, error)
 }
 
 func (s *UsersService) Register(user users.UserDTO) (users.UserDTO, error) {
@@ -108,4 +109,51 @@ func (s *UsersService) Update(user users.UserDTO) (users.UserDTO, error) {
 	}
 
 	return updatedUser, nil
+}
+
+func (s *UsersService) GetUsersList(ids []string) ([]users.UserDTO, error) {
+	getUsersListURL := s.env.Get("USERS_API_URL")
+
+	requestBody := struct {
+		IDs []string `json:"ids"`
+	}{
+		IDs: ids,
+	}
+
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, errors.NewError("SERIALIZATION_ERROR", "Error al serializar los IDs de usuarios", http.StatusInternalServerError)
+	}
+
+	req, err := http.NewRequest("POST", getUsersListURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, errors.NewError("REQUEST_CREATION_ERROR", "Error al crear la solicitud HTTP", http.StatusInternalServerError)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", s.env.Get("API_KEY"))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.NewError("REQUEST_ERROR", "Error al enviar la solicitud al servicio de usuarios", http.StatusInternalServerError)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.NewError("RESPONSE_READ_ERROR", "Error al leer la respuesta del servidor", http.StatusInternalServerError)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.NewError("SERVER_ERROR", fmt.Sprintf("Error en la respuesta del servidor: %s", string(body)), resp.StatusCode)
+	}
+
+	var usersList []users.UserDTO
+	err = json.Unmarshal(body, &usersList)
+	if err != nil {
+		return nil, errors.NewError("DESERIALIZATION_ERROR", "Error al deserializar la respuesta del servidor", http.StatusInternalServerError)
+	}
+
+	return usersList, nil
 }

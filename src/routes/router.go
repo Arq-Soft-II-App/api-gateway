@@ -18,9 +18,13 @@ func SetupRoutes(engine *gin.Engine, controller *controllers.Controller) {
 		UserRoutes(userGroup, controller.Users)
 	}
 
-	/* 	courseGroup := engine.Group("/courses")
-	   	{
-	   	     CourseRoutes(courseGroup, controller.Course)
-	   	} */
+	courseGroup := engine.Group("/courses")
+	{
+		CoursesRoutes(courseGroup, controller.Courses)
+	}
+	commentsGroup := engine.Group("/comments")
+	{
+		CommentsRoutes(commentsGroup, controller.Comments)
+	}
 
 }

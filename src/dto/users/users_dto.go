@@ -10,3 +10,7 @@ type UserDTO struct {
 	Avatar    string  `json:"avatar"`
 	Password  *string `json:"password,omitempty"`
 }
+
+type UsersListDTO struct {
+	Users []UserDTO `json:"users"`
+}
