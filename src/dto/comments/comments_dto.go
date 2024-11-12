@@ -7,7 +7,7 @@ type CreateCommentDto struct {
 }
 
 type GetCommentsDto struct {
-	Comment    string `json:"comment"`
+	Text       string `json:"text"`
 	UserName   string `json:"user_name"`
 	UserAvatar string `json:"user_avatar"`
 	UserId     string `json:"user_id"`

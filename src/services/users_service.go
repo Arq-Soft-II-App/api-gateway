@@ -112,7 +112,9 @@ func (s *UsersService) Update(user users.UserDTO) (users.UserDTO, error) {
 }
 
 func (s *UsersService) GetUsersList(ids []string) ([]users.UserDTO, error) {
-	getUsersListURL := s.env.Get("USERS_API_URL")
+	fmt.Println("IDs de usuarios:", ids)
+
+	getUsersListURL := s.env.Get("USERS_API_URL") + "/list"
 
 	requestBody := struct {
 		IDs []string `json:"ids"`
@@ -125,7 +127,7 @@ func (s *UsersService) GetUsersList(ids []string) ([]users.UserDTO, error) {
 		return nil, errors.NewError("SERIALIZATION_ERROR", "Error al serializar los IDs de usuarios", http.StatusInternalServerError)
 	}
 
-	req, err := http.NewRequest("POST", getUsersListURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("GET", getUsersListURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, errors.NewError("REQUEST_CREATION_ERROR", "Error al crear la solicitud HTTP", http.StatusInternalServerError)
 	}

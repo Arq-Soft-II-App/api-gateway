@@ -38,7 +38,10 @@ func (c *CommentsController) CreateComment(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, createdComment)
+	ctx.JSON(http.StatusCreated, gin.H{
+		"message":  "La comentario se registro con exito",
+		"response": createdComment,
+	})
 }
 
 func (c *CommentsController) GetCourseComments(ctx *gin.Context) {
@@ -70,5 +73,8 @@ func (c *CommentsController) UpdateComment(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, updatedComment)
+	ctx.JSON(http.StatusOK, gin.H{
+		"message":  "El comentario se actualizo con exito",
+		"response": updatedComment,
+	})
 }

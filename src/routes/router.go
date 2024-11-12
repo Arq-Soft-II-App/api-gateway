@@ -22,9 +22,11 @@ func SetupRoutes(engine *gin.Engine, controller *controllers.Controller) {
 	{
 		CoursesRoutes(courseGroup, controller.Courses)
 	}
-	commentsGroup := engine.Group("/comments")
+	commentsGroup := engine.Group("/comment")
 	{
 		CommentsRoutes(commentsGroup, controller.Comments)
 	}
 
+	engine.POST("/category/create", controller.Categories.CreateCategory)
+	engine.GET("/categories", controller.Categories.GetCategories)
 }

@@ -20,7 +20,7 @@ type CommentsService struct {
 type CommentsServiceInterface interface {
 	CreateComment(data comments.CreateCommentDto) (comments.CreateCommentDto, error)
 	GetCourseComments(courseId string) (comments.GetCommentsResponse, error)
-	UpdateComment(data comments.CreateCommentDto) (comments.CreateCommentDto, error)
+	UpdateComment(data comments.CreateCommentDto) (comments.GetCommentsDto, error)
 }
 
 type CourseComment struct {
@@ -38,22 +38,25 @@ func NewCommentsService(env envs.Envs, usersService UsersServiceInterface) *Comm
 }
 
 func (s *CommentsService) GetCourseComments(courseId string) (comments.GetCommentsResponse, error) {
-	commentsURL := fmt.Sprintf("%s/%s/comments", s.env.Get("COURSES_API_URL"), courseId)
+	commentsURL := fmt.Sprintf("%s/%s", s.env.Get("COMMENTS_URL"), courseId)
 
 	req, err := http.NewRequest("GET", commentsURL, nil)
 	if err != nil {
+		fmt.Println("Error al crear la solicitud HTTP", err)
 		return nil, errors.NewError("REQUEST_CREATION_ERROR", "Error al crear la solicitud HTTP", http.StatusInternalServerError)
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Println("Error al obtener los comentarios", err)
 		return nil, errors.NewError("REQUEST_ERROR", "Error al obtener los comentarios", http.StatusInternalServerError)
 	}
 	defer resp.Body.Close()
 
 	var courseComments CourseCommentsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&courseComments); err != nil {
+		fmt.Println("Error al decodificar la respuesta", err)
 		return nil, errors.NewError("DECODE_ERROR", "Error al decodificar la respuesta", http.StatusInternalServerError)
 	}
 
@@ -70,6 +73,7 @@ func (s *CommentsService) GetCourseComments(courseId string) (comments.GetCommen
 	// Obtener información de usuarios
 	users, err := s.usersService.GetUsersList(userIds)
 	if err != nil {
+		fmt.Println("Error al obtener los usuarios", err)
 		return nil, err
 	}
 
@@ -84,7 +88,7 @@ func (s *CommentsService) GetCourseComments(courseId string) (comments.GetCommen
 	for i, comment := range courseComments {
 		user := usersMap[comment.UserId]
 		response[i] = comments.GetCommentsDto{
-			Comment:    comment.Text,
+			Text:       comment.Text,
 			UserName:   user.Name + " " + user.Lastname,
 			UserAvatar: user.Avatar,
 			UserId:     user.ID,
@@ -95,7 +99,7 @@ func (s *CommentsService) GetCourseComments(courseId string) (comments.GetCommen
 }
 
 func (s *CommentsService) CreateComment(data comments.CreateCommentDto) (comments.CreateCommentDto, error) {
-	commentsURL := fmt.Sprintf("%s/%s/comments", s.env.Get("COURSES_API_URL"), data.CourseId)
+	commentsURL := fmt.Sprintf("%s/", s.env.Get("COMMENTS_URL"))
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -122,30 +126,40 @@ func (s *CommentsService) CreateComment(data comments.CreateCommentDto) (comment
 	return createdComment, nil
 }
 
-func (s *CommentsService) UpdateComment(data comments.CreateCommentDto) (comments.CreateCommentDto, error) {
-	commentsURL := fmt.Sprintf("%s/%s/comments", s.env.Get("COURSES_API_URL"), data.CourseId)
+func (s *CommentsService) UpdateComment(data comments.CreateCommentDto) (comments.GetCommentsDto, error) {
+	commentsURL := fmt.Sprintf("%s/", s.env.Get("COMMENTS_URL"))
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return comments.CreateCommentDto{}, errors.NewError("SERIALIZATION_ERROR", "Error al serializar el comentario", http.StatusInternalServerError)
+		return comments.GetCommentsDto{}, errors.NewError("SERIALIZATION_ERROR", "Error al serializar el comentario", http.StatusInternalServerError)
 	}
 
 	req, err := http.NewRequest("PUT", commentsURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return comments.CreateCommentDto{}, errors.NewError("REQUEST_CREATION_ERROR", "Error al crear la solicitud", http.StatusInternalServerError)
+		return comments.GetCommentsDto{}, errors.NewError("REQUEST_CREATION_ERROR", "Error al crear la solicitud", http.StatusInternalServerError)
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return comments.CreateCommentDto{}, errors.NewError("REQUEST_ERROR", "Error al actualizar el comentario", http.StatusInternalServerError)
+		return comments.GetCommentsDto{}, errors.NewError("REQUEST_ERROR", "Error al actualizar el comentario", http.StatusInternalServerError)
 	}
 	defer resp.Body.Close()
 
-	var updatedComment comments.CreateCommentDto
+	var updatedComment comments.GetCommentsDto
 	if err := json.NewDecoder(resp.Body).Decode(&updatedComment); err != nil {
-		return comments.CreateCommentDto{}, errors.NewError("DECODE_ERROR", "Error al decodificar la respuesta", http.StatusInternalServerError)
+		return comments.GetCommentsDto{}, errors.NewError("DECODE_ERROR", "Error al decodificar la respuesta", http.StatusInternalServerError)
 	}
+
+	// Obtener información del usuario
+	user, err := s.usersService.GetUsersList([]string{data.UserId})
+	if err != nil {
+		return comments.GetCommentsDto{}, err
+	}
+
+	// Unir información del usuario a la respuesta
+	updatedComment.UserName = user[0].Name + " " + user[0].Lastname
+	updatedComment.UserAvatar = user[0].Avatar
 
 	return updatedComment, nil
 }
