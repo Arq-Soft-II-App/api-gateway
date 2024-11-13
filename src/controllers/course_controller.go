@@ -22,7 +22,6 @@ func NewCourseController(service services.CourseServiceInterface) *CourseControl
 type CourseControllerInterface interface {
 	CreateCourse(c *gin.Context)
 	UpdateCourse(c *gin.Context)
-	GetCoursesList(c *gin.Context)
 	GetCourseById(c *gin.Context)
 }
 
@@ -58,16 +57,6 @@ func (c *CourseController) UpdateCourse(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, result)
-}
-
-func (c *CourseController) GetCoursesList(ctx *gin.Context) {
-	courses, err := c.service.GetCoursesList()
-	if err != nil {
-		ctx.JSON(errors.GetStatusCode(err), err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, courses)
 }
 
 func (c *CourseController) GetCourseById(ctx *gin.Context) {

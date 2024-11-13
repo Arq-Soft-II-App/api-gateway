@@ -9,7 +9,7 @@ import (
 
 type CustomClaims struct {
 	Id   uuid.UUID `json:"id"`
-	Role string    `json:"role"`
+	Role int       `json:"role"`
 }
 
 func (c *CustomClaims) Valid() error {
@@ -19,7 +19,7 @@ func (c *CustomClaims) Valid() error {
 func NewCustomClaims(id uuid.UUID, role string) *CustomClaims {
 	return &CustomClaims{
 		Id:   id,
-		Role: role,
+		Role: setRole(role),
 	}
 }
 
@@ -33,4 +33,11 @@ func SignDocument(id uuid.UUID, role string) string {
 		panic(err)
 	}
 	return signedToken
+}
+
+func setRole(role string) int {
+	if role == "admin" {
+		return 1
+	}
+	return 0
 }

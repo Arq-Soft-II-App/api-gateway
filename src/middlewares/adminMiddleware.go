@@ -10,9 +10,10 @@ import (
 	jwt "github.com/golang-jwt/jwt"
 )
 
-// AuthMiddleware verifies the JWT token
-func AuthMiddleware() gin.HandlerFunc {
+// AdminAuthMiddleware verifies the JWT token and the user's role
+func AdminAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+
 		if c.Request.Method == "OPTIONS" {
 			c.Next()
 			return
@@ -45,16 +46,12 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		if claims.Role != 1 {
+			ErrorResponse(c, 403, "You don't have permission to access this resource")
+			return
+		}
+
 		c.Set("UserID", claims.Id)
 		c.Next()
 	}
-}
-
-func ErrorResponse(c *gin.Context, status int, message string) {
-	c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
-	c.Header("Access-Control-Allow-Credentials", "true")
-	c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-
-	c.AbortWithStatusJSON(status, gin.H{"error": message})
 }
