@@ -79,21 +79,21 @@ func (s *InscriptionService) GetMyCourses(userId string) ([]courses.CourseListDt
 	}
 	defer resp.Body.Close()
 
-	// Decode the response into a slice of Course
-	var coursesFromInscriptions []inscriptions.Course
-	if err := json.NewDecoder(resp.Body).Decode(&coursesFromInscriptions); err != nil {
+	var response struct {
+		Data []courses.CourseListDto `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		fmt.Printf("Error al decodificar la respuesta: %v\n", err)
 		return nil, errors.NewError("DECODE_ERROR", "Error al decodificar la respuesta", http.StatusInternalServerError)
 	}
 
-	// Use the updated GetCoursesList method
-	coursesListPopulated, err := s.courseService.GetCoursesList(coursesFromInscriptions)
 	if err != nil {
 		fmt.Println("Error al obtener los cursos:", err)
 		return nil, errors.NewError("REQUEST_ERROR", "Error al obtener los cursos", http.StatusInternalServerError)
 	}
 
-	return coursesListPopulated, nil
+	return response.Data, nil
 }
 
 func (s *InscriptionService) GetCourseStudents(courseId string) (inscriptions.StudentsInCourse, error) {

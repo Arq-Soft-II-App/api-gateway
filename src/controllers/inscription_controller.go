@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type InscriptionsController struct {
@@ -28,14 +29,14 @@ type InscriptionControllerInterface interface {
 
 // CreateInscription crea una nueva inscripción
 func (c *InscriptionsController) CreateInscription(ctx *gin.Context) {
-	userId := ctx.GetString("UserID")
+	//userId := ctx.GetString("UserID")
 	var request inscriptions.EnrollRequestResponseDto
 	if err := ctx.ShouldBindJSON(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, errors.NewError("BIND_ERROR", "Error al enlazar el JSON", http.StatusBadRequest))
 		return
 	}
 
-	request.UserId = userId
+	//request.UserId = userId
 
 	createdInscription, err := c.service.CreateInscription(request)
 	if err != nil {
@@ -47,13 +48,14 @@ func (c *InscriptionsController) CreateInscription(ctx *gin.Context) {
 }
 
 func (c *InscriptionsController) GetMyCourses(ctx *gin.Context) {
-	userId := ctx.GetString("UserID")
-	if userId == "" {
+	userId, exists := ctx.Get("UserID")
+
+	if !exists {
 		ctx.JSON(http.StatusBadRequest, errors.NewError("INVALID_REQUEST", "Falta el userId", http.StatusBadRequest))
 		return
 	}
 
-	courses, err := c.service.GetMyCourses(userId)
+	courses, err := c.service.GetMyCourses(userId.(uuid.UUID).String())
 	if err != nil {
 		ctx.JSON(errors.GetStatusCode(err), err)
 		return

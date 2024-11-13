@@ -58,7 +58,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 func (c *AuthController) RefreshToken(ctx *gin.Context) {
 	token := ctx.GetHeader("Authorization")
 
-	_, newToken, err := c.service.RefreshToken(token)
+	user, newToken, err := c.service.RefreshToken(token)
 
 	if err != nil {
 		if customErr, ok := err.(*errors.Error); ok {
@@ -75,5 +75,5 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(200, gin.H{ /*user: users */ "token": newToken})
+	ctx.JSON(200, gin.H{"user": user, "token": newToken})
 }

@@ -114,7 +114,7 @@ func (s *UsersService) Update(user users.UserDTO) (users.UserDTO, error) {
 func (s *UsersService) GetUsersList(ids []string) ([]users.UserDTO, error) {
 	fmt.Println("IDs de usuarios:", ids)
 
-	getUsersListURL := s.env.Get("USERS_API_URL") + "/list"
+	getUsersListURL := s.env.Get("USERS_API_URL") + "/users/list"
 
 	requestBody := struct {
 		IDs []string `json:"ids"`

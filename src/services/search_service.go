@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type SearchService struct {
@@ -29,12 +30,22 @@ type SearchResponse struct {
 
 func (s *SearchService) SearchCourses(query string) ([]courses.CourseListDto, error) {
 	searchURL := s.env.Get("SEARCH_API_URL")
-	url := fmt.Sprintf("%s?q=%s", searchURL, query)
+	decodedQuery, err := url.QueryUnescape(query)
+	if err != nil {
+		return nil, fmt.Errorf("error decodificando query: %v", err)
+	}
+	escapedQuery := url.QueryEscape(decodedQuery)
+	url := fmt.Sprintf("%s?q=%s", searchURL, escapedQuery)
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error del servidor: %d", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -44,7 +55,7 @@ func (s *SearchService) SearchCourses(query string) ([]courses.CourseListDto, er
 	var searchResponse SearchResponse
 	err = json.Unmarshal(body, &searchResponse)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error al parsear JSON: %v, body: %s", err, string(body))
 	}
 	return searchResponse.Courses, nil
 }

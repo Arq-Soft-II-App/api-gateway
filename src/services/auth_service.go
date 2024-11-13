@@ -32,7 +32,7 @@ func NewAuthService(env envs.Envs) *AuthService {
 }
 
 func (s *AuthService) Login(data auth.LoginDTO) (users.UserDTO, string, error) {
-	Login_users_API_URL := s.env.Get("USERS_API_URL") + "/login"
+	Login_users_API_URL := s.env.Get("USERS_API_URL") + "/users/login"
 	var userResponse users.UserDTO
 
 	loginReq, err := json.Marshal(data)
@@ -87,16 +87,37 @@ func (s *AuthService) Login(data auth.LoginDTO) (users.UserDTO, string, error) {
 func (a *AuthService) RefreshToken(token string) (users.UserDTO, string, error) {
 	claims, err := jwt.VerifyToken(token)
 	if err != nil {
-		return users.UserDTO{}, "", errors.NewError("INVALID TOKEN", "Invalid token", 401)
+		return users.UserDTO{}, "", errors.NewError("INVALID_TOKEN", "Token inválido", 401)
 	}
 
-	fmt.Println(claims)
-	id, err := uuid.Parse(claims["id"].(string))
+	userIDClaim, ok := claims["id"]
+	if !ok || userIDClaim == nil {
+		return users.UserDTO{}, "", errors.NewError("INVALID_TOKEN", "Token malformado: id no encontrado", 401)
+	}
+
+	userID, ok := userIDClaim.(string)
+	if !ok {
+		return users.UserDTO{}, "", errors.NewError("INVALID_TOKEN", "Token malformado: formato de id inválido", 401)
+	}
+
+	id, err := uuid.Parse(userID)
 	if err != nil {
 		return users.UserDTO{}, "", errors.NewError("INVALID ID", "Invalid ID", 401)
 	}
 
-	role := claims["role"].(string)
+	roleClaim, ok := claims["role"]
+	if !ok || roleClaim == nil {
+		return users.UserDTO{}, "", errors.NewError("INVALID_TOKEN", "Token malformado: rol no encontrado", 401)
+	}
+
+	role, ok := roleClaim.(string)
+	if !ok {
+		if numRole, ok := roleClaim.(float64); ok {
+			role = fmt.Sprintf("%.0f", numRole)
+		} else {
+			return users.UserDTO{}, "", errors.NewError("INVALID_TOKEN", "Token malformado: formato de rol inválido", 401)
+		}
+	}
 
 	getUserURL := fmt.Sprintf("%s/users/%s", a.env.Get("USERS_API_URL"), id)
 
