@@ -46,7 +46,7 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if claims.Role != 1 {
+		if claims.Role != "admin" {
 			ErrorResponse(c, 403, "You don't have permission to access this resource")
 			return
 		}

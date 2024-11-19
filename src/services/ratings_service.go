@@ -4,6 +4,7 @@ import (
 	"api-gateway/src/config/envs"
 	"api-gateway/src/dto/ratings"
 	"encoding/json"
+	"fmt"
 
 	"api-gateway/src/errors"
 	"bytes"
@@ -94,6 +95,7 @@ func (s *RatingsService) GetAllRatings() ([]ratings.RatingDTO, error) {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	fmt.Println("resp ratings", resp)
 	if err != nil {
 		return []ratings.RatingDTO{}, errors.NewError("REQUEST_ERROR", "Error al obtener las valoraciones", http.StatusInternalServerError)
 	}

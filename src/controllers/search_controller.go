@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"api-gateway/src/dto/courses"
 	"api-gateway/src/errors"
 	"api-gateway/src/services"
 	"net/http"
@@ -26,6 +27,10 @@ func (c *SearchController) SearchCourses(ctx *gin.Context) {
 	query := ctx.Query("q")
 	results, err := c.service.SearchCourses(query)
 	if err != nil {
+		if errors.GetStatusCode(err) == http.StatusNotFound {
+			ctx.JSON(http.StatusNotFound, []courses.CourseListDto{})
+			return
+		}
 		ctx.JSON(errors.GetStatusCode(err), gin.H{"error": err.Error()})
 		return
 	}

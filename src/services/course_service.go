@@ -3,7 +3,6 @@ package services
 import (
 	"api-gateway/src/config/envs"
 	"api-gateway/src/dto/courses"
-	"api-gateway/src/dto/inscriptions"
 	"api-gateway/src/errors"
 	"bytes"
 	"encoding/json"
@@ -20,7 +19,7 @@ type CourseServiceInterface interface {
 	CreateCourse(data courses.CourseDTO) (courses.CourseDTO, error)
 	UpdateCourse(data courses.CourseDTO) (courses.CourseDTO, error)
 	GetCourseById(id string) (courses.CourseDTO, error)
-	GetCoursesList(courses []inscriptions.Course) ([]courses.CourseListDto, error)
+	GetCoursesList(courseIDs []string) ([]courses.CourseListDto, error)
 }
 
 func NewCourseService(env envs.Envs) *CourseService {
@@ -78,11 +77,14 @@ func (s *CourseService) UpdateCourse(data courses.CourseDTO) (courses.CourseDTO,
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
+	fmt.Println("Request:", req)
 	resp, err := client.Do(req)
 	if err != nil {
 		return courses.CourseDTO{}, errors.NewInternalServerError("Error al actualizar el curso")
 	}
 	defer resp.Body.Close()
+
+	fmt.Println("Respuesta:", resp.Body)
 
 	var backendResponse courses.CourseBackendDTO
 	if err := json.NewDecoder(resp.Body).Decode(&backendResponse); err != nil {
@@ -97,28 +99,21 @@ func (s *CourseService) UpdateCourse(data courses.CourseDTO) (courses.CourseDTO,
 	}, nil
 }
 
-func (s *CourseService) GetCoursesList(ids []inscriptions.Course) ([]courses.CourseListDto, error) {
-	var courseIDs []string
-	for _, course := range ids {
-		courseIDs = append(courseIDs, course.CourseId)
-	}
-
-	// Create the correct request body
+func (s *CourseService) GetCoursesList(courseIDs []string) ([]courses.CourseListDto, error) {
 	body := map[string][]string{"ids": courseIDs}
 	jsonData, err := json.Marshal(body)
 	if err != nil {
 		return nil, errors.NewInternalServerError("Error al procesar los IDs")
 	}
 
-	// Make the HTTP POST request
 	resp, err := http.Post(fmt.Sprintf("%s/getCourseList", s.env.Get("COURSES_API_URL")), "application/json", bytes.NewBuffer(jsonData))
+	fmt.Println("Resp course list", resp)
 	if err != nil {
 		fmt.Println("Error al obtener los cursos:", err)
 		return nil, errors.NewInternalServerError("Error al obtener los cursos1")
 	}
 	defer resp.Body.Close()
 
-	// Decode the response
 	var backendCourses []courses.CourseListDto
 	fmt.Println("Respuesta:", resp.Body)
 	if err := json.NewDecoder(resp.Body).Decode(&backendCourses); err != nil {
@@ -138,7 +133,7 @@ func (s *CourseService) GetCourseById(id string) (courses.CourseDTO, error) {
 
 	var backendCourse courses.CourseBackendDTO
 	if err := json.NewDecoder(resp.Body).Decode(&backendCourse); err != nil {
-		return courses.CourseDTO{}, errors.NewInternalServerError("Error al procesar la respuesta")
+		return courses.CourseDTO{}, errors.NewInternalServerError(fmt.Sprintf("Error al procesar la respuesta: %s", err))
 	}
 
 	return courses.CourseDTO{

@@ -31,13 +31,13 @@ func (c *CategoriesController) CreateCategory(ctx *gin.Context) {
 		return
 	}
 
-	err := c.service.CreateCategory(categoryData)
+	categoryResponse, err := c.service.CreateCategory(categoryData)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errors.NewInternalServerError("Error al crear la categoría: "+err.Error()))
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"message": "Categoría creada exitosamente"})
+	ctx.JSON(http.StatusCreated, categoryResponse)
 }
 
 func (c *CategoriesController) GetCategories(ctx *gin.Context) {
