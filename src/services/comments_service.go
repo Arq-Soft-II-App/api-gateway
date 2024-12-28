@@ -49,15 +49,24 @@ func (s *CommentsService) GetCourseComments(courseId string) (comments.GetCommen
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Println("Error al obtener los comentarios servicio", err)
+		error := err.(*errors.Error)
+		if error.HTTPStatusCode == 404 {
+			return nil, errors.NewError("COMMENT_NOT_FOUND", "No se encontraron comentarios para el curso", 404)
+		}
 		fmt.Println("Error al obtener los comentarios", err)
 		return nil, errors.NewError("REQUEST_ERROR", "Error al obtener los comentarios", http.StatusInternalServerError)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 404 {
+		return nil, errors.NewError("COMMENT_NOT_FOUND", "No se encontraron comentarios para el curso", 404)
+	}
+
 	var courseComments CourseCommentsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&courseComments); err != nil {
-		fmt.Println("Error al decodificar la respuesta", err)
-		return nil, errors.NewError("DECODE_ERROR", "Error al decodificar la respuesta", http.StatusInternalServerError)
+		fmt.Println("Error al decodificar la respuesta comentarios", err)
+		return nil, errors.NewError("DECODE_ERROR", "Error al decodificar la respuesta comentarios", http.StatusInternalServerError)
 	}
 
 	// Extraer los IDs de usuario únicos

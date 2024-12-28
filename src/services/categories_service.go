@@ -16,7 +16,7 @@ type CategoriesService struct {
 }
 
 type CategoriesServiceInterface interface {
-	CreateCategory(data categories.CreateCategoryDto) error
+	CreateCategory(data categories.CreateCategoryDto) (categories.CategoryResponse, error)
 	GetCategories() ([]categories.CategoryResponse, error)
 }
 
@@ -26,21 +26,25 @@ func NewCategoriesService(env envs.Envs) *CategoriesService {
 	}
 }
 
-func (s *CategoriesService) CreateCategory(data categories.CreateCategoryDto) error {
+func (s *CategoriesService) CreateCategory(data categories.CreateCategoryDto) (categories.CategoryResponse, error) {
 	url := s.env.Get("CATEGORIES_URL")
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
-		return errors.NewInternalServerError("Error al convertir los datos a JSON: " + err.Error())
+		return categories.CategoryResponse{}, errors.NewInternalServerError("Error al convertir los datos a JSON: " + err.Error())
 	}
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(dataBytes))
 	if err != nil {
-		return errors.NewInternalServerError("Error al llamar al servicio de categorías: " + err.Error())
+		return categories.CategoryResponse{}, errors.NewInternalServerError("Error al llamar al servicio de categorías: " + err.Error())
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusCreated {
-		return errors.NewInternalServerError("Error al crear la categoría, código de respuesta: " + fmt.Sprint(resp.StatusCode))
+		return categories.CategoryResponse{}, errors.NewInternalServerError("Error al crear la categoría, código de respuesta: " + fmt.Sprint(resp.StatusCode))
 	}
-	return nil
+	var categoryResponse categories.CategoryResponse
+	if err := json.NewDecoder(resp.Body).Decode(&categoryResponse); err != nil {
+		return categories.CategoryResponse{}, errors.NewInternalServerError("Error al decodificar la respuesta: " + err.Error())
+	}
+	return categoryResponse, nil
 }
 
 func (s *CategoriesService) GetCategories() ([]categories.CategoryResponse, error) {

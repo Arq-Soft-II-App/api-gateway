@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"api-gateway/src/dto/comments"
+	"api-gateway/src/errors"
 	"api-gateway/src/services"
 
 	"net/http"
@@ -53,7 +54,12 @@ func (c *CommentsController) GetCourseComments(ctx *gin.Context) {
 
 	comments, err := c.service.GetCourseComments(courseId)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error interno del servidor"})
+		error := err.(*errors.Error)
+		if error.HTTPStatusCode == 404 {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": error.Message})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error interno del servidor"})
+		}
 		return
 	}
 

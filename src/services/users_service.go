@@ -28,7 +28,7 @@ type UsersServiceInterface interface {
 }
 
 func (s *UsersService) Register(user users.UserDTO) (users.UserDTO, error) {
-	registerURL := s.env.Get("USERS_API_URL")
+	registerURL := s.env.Get("USERS_API_URL") + "/users"
 
 	client := &http.Client{}
 

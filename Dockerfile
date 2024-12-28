@@ -1,15 +1,22 @@
-# Usa una imagen base de Go
-FROM golang:1.22.1-alpine
+FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
 COPY . .
 
 RUN go build -o main .
 
-EXPOSE 8080
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=builder /app/main .
+COPY .env .
+
+EXPOSE 8000
 
 CMD ["./main"]

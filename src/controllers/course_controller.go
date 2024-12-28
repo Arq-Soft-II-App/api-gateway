@@ -48,7 +48,7 @@ func (c *CourseController) UpdateCourse(ctx *gin.Context) {
 		return
 	}
 
-	courseData.ID = ctx.Param("id")
+	courseData.ID = ctx.Param("cid")
 
 	result, err := c.service.UpdateCourse(courseData)
 	if err != nil {

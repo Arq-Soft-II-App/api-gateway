@@ -61,6 +61,8 @@ func (s *AuthService) Login(data auth.LoginDTO) (users.UserDTO, string, error) {
 		return users.UserDTO{}, "", errors.NewError("RESPONSE_READ_ERROR", "Error al leer la respuesta", 500)
 	}
 
+	fmt.Println("Respuesta login:", string(body))
+
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusUnauthorized {
 			return users.UserDTO{}, "", errors.NewError("INVALID_CREDENTIALS", "Credenciales inválidas", resp.StatusCode)
@@ -78,6 +80,8 @@ func (s *AuthService) Login(data auth.LoginDTO) (users.UserDTO, string, error) {
 	if err != nil {
 		return users.UserDTO{}, "", errors.NewError("UUID_CONVERSION_ERROR", "Error al convertir el ID del usuario en UUID", 500)
 	}
+
+	fmt.Println("userResponse.Role", userResponse.Role)
 
 	token := jwt.SignDocument(userUUID, userResponse.Role)
 

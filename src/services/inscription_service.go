@@ -25,14 +25,6 @@ type InscriptionServiceInterface interface {
 	IsEnrolled(courseId string, userId string) (bool, error)
 }
 
-type CourseListDto struct {
-	Courses []Course `json:"courses"`
-}
-
-type Course struct {
-	CourseId string `json:"course_id"`
-}
-
 func NewInscriptionsService(env envs.Envs, courseService CourseServiceInterface, usersService UsersServiceInterface) *InscriptionService {
 	return &InscriptionService{
 		env:           env,
@@ -71,29 +63,42 @@ func (s *InscriptionService) CreateInscription(data inscriptions.EnrollRequestRe
 }
 
 func (s *InscriptionService) GetMyCourses(userId string) ([]courses.CourseListDto, error) {
+	fmt.Println("userId", userId)
 	inscriptionsURL := fmt.Sprintf("%smyCourses?userId=%s", s.env.Get("INSCRIPTIONS_URL"), userId)
 
 	resp, err := http.Get(inscriptionsURL)
+	fmt.Println("resp inscriptions", resp)
 	if err != nil {
 		return nil, errors.NewError("REQUEST_ERROR", "Error al obtener las inscripciones", http.StatusInternalServerError)
 	}
 	defer resp.Body.Close()
 
-	var response struct {
-		Data []courses.CourseListDto `json:"data"`
+	// Manejar el caso de 404
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errors.NewError("NOT_FOUND", "No hay inscripciones para este usuario", http.StatusNotFound)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	// Decodificar la respuesta
+	var inscriptionsData []inscriptions.Course
+	if err := json.NewDecoder(resp.Body).Decode(&inscriptionsData); err != nil {
 		fmt.Printf("Error al decodificar la respuesta: %v\n", err)
 		return nil, errors.NewError("DECODE_ERROR", "Error al decodificar la respuesta", http.StatusInternalServerError)
 	}
 
-	if err != nil {
-		fmt.Println("Error al obtener los cursos:", err)
-		return nil, errors.NewError("REQUEST_ERROR", "Error al obtener los cursos", http.StatusInternalServerError)
+	// Extraer los IDs de los cursos
+	var courseIDs []string
+	for _, inscription := range inscriptionsData {
+		courseIDs = append(courseIDs, inscription.CourseId)
 	}
 
-	return response.Data, nil
+	// Llamar al servicio de cursos para obtener la información detalladaError al obtener los cursos
+	coursesList, err := s.courseService.GetCoursesList(courseIDs)
+	if err != nil {
+		fmt.Printf("Error al obtener los cursos: %v\n", err)
+		return nil, errors.NewError("COURSE_SERVICE_ERROR", "Error al obtener los cursos", http.StatusInternalServerError)
+	}
+
+	return coursesList, nil
 }
 
 func (s *InscriptionService) GetCourseStudents(courseId string) (inscriptions.StudentsInCourse, error) {
