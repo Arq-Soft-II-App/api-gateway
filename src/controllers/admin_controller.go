@@ -28,9 +28,9 @@ func (ac *AdminController) ListInstances(c *gin.Context) {
 	c.JSON(http.StatusOK, containers)
 }
 
-// StartInstance crea e inicia un nuevo contenedor.
+// CreatetInstance crea e inicia un nuevo contenedor.
 // Se espera recibir un JSON con { "image": "nombre-imagen", "name": "nombre-contenedor", "port": "puerto" }
-func (ac *AdminController) StartInstance(c *gin.Context) {
+func (ac *AdminController) CreatetInstance(c *gin.Context) {
 	var req struct {
 		Image string `json:"image"`
 		Name  string `json:"name"`
@@ -59,6 +59,28 @@ func (ac *AdminController) StartInstance(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"container_id": id})
 }
 
+// StartInstance inicia un contenedor dado su ID (pasado como parámetro en la URL).
+func (ac *AdminController) StartInstance(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Falta el ID del contenedor"})
+		return
+	}
+
+	if err := ac.DockerService.StartContainer(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Actualizamos la configuración de Nginx.
+	if err := utils.ReloadNginxConfig(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"started": id})
+}
+
 // StopInstance detiene un contenedor dado su ID (pasado como parámetro en la URL).
 func (ac *AdminController) StopInstance(c *gin.Context) {
 	id := c.Param("id")
@@ -77,4 +99,27 @@ func (ac *AdminController) StopInstance(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"stopped": id})
+}
+
+// RemoveInstance elimina (remueve) un contenedor dado su ID (pasado como parámetro en la URL).
+func (ac *AdminController) RemoveInstance(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Falta el ID del contenedor"})
+		return
+	}
+
+	// Remover el contenedor.
+	if err := ac.DockerService.RemoveContainer(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Actualizamos la configuración de Nginx.
+	if err := utils.ReloadNginxConfig(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"removed": id})
 }

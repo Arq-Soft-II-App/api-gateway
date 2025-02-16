@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -48,6 +49,12 @@ func (ds *DockerService) CreateContainer(image string, name string, exposedPort 
 		return "", err
 	}
 
+	networkingConfig := &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{
+			"backend-network": {},
+		},
+	}
+
 	resp, err := ds.cli.ContainerCreate(context.Background(),
 		&container.Config{
 			Image: image,
@@ -55,10 +62,21 @@ func (ds *DockerService) CreateContainer(image string, name string, exposedPort 
 				port: struct{}{},
 			},
 		},
-		nil, nil, nil, name,
+		nil,
+		networkingConfig,
+		nil,
+		name,
 	)
 	if err != nil {
 		return "", err
 	}
 	return resp.ID, nil
+}
+
+func (ds *DockerService) RemoveContainer(containerID string) error {
+	return ds.cli.ContainerRemove(
+		context.Background(),
+		containerID,
+		types.ContainerRemoveOptions{Force: true, RemoveVolumes: true},
+	)
 }

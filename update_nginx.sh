@@ -1,16 +1,11 @@
 #!/bin/bash
+set -e  # Detiene el script si hay algún error
 # update_nginx.sh
 # Este script genera un nuevo nginx.conf basándose en las instancias activas de cada servicio y recarga Nginx.
 
-# Definimos un array asociativo con el nombre lógico del servicio y el puerto interno esperado.
-declare -A services
-services=(
-  ["api_gateway"]="8000"
-  ["users_api"]="4001"
-  ["courses_api"]="4002"
-  ["inscription_api"]="4003"
-  ["search_courses_api"]="4004"
-)
+# Definimos los servicios y puertos usando arrays simples
+services_names=("api-gateway" "users-api" "courses-api" "inscription-api" "search-api")
+services_ports=("8000" "4001" "4002" "4003" "4004")
 
 # Iniciamos la plantilla del archivo.
 NGINX_CONF="events {}
@@ -19,12 +14,14 @@ http {
 "
 
 # Para cada servicio, consultamos los contenedores activos y armamos el bloque upstream.
-for service in "${!services[@]}"; do
+for i in "${!services_names[@]}"; do
+    service="${services_names[$i]}"
+    port="${services_ports[$i]}"
     echo "Procesando servicio $service..."
-    port=${services[$service]}
-    # Filtramos contenedores cuyo nombre contenga el identificador del servicio.
+    
+    # Filtramos contenedores cuyo nombre contenga el identificador del servicio
     containers=$(docker ps --filter "name=${service}" --format "{{.Names}}")
-    # Si no se encuentra ningún contenedor, usamos el nombre base (esto es para asegurar que siempre haya al menos un server).
+    # Si no se encuentra ningún contenedor, usamos el nombre base
     if [ -z "$containers" ]; then
        containers="$service"
     fi
@@ -43,7 +40,7 @@ NGINX_CONF+="    server {
 
         # Por defecto, redirige al api_gateway
         location / {
-            proxy_pass http://api_gateway_backend;
+            proxy_pass http://api-gateway_backend/;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -51,22 +48,22 @@ NGINX_CONF+="    server {
 
         # Para usuarios
         location /users/ {
-            proxy_pass http://users_api_backend;
+            proxy_pass http://users-api_backend/;
         }
 
         # Para cursos
         location /courses/ {
-            proxy_pass http://courses_api_backend;
+            proxy_pass http://courses-api_backend/;
         }
 
         # Para inscripciones
         location /inscriptions/ {
-            proxy_pass http://inscription_api_backend;
+            proxy_pass http://inscription-api_backend/;
         }
 
         # Para búsqueda (search)
         location /search/ {
-            proxy_pass http://search_courses_api_backend;
+            proxy_pass http://search-api_backend/;
         }
     }
 }

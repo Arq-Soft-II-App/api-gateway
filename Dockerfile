@@ -15,6 +15,7 @@ FROM alpine:latest
 WORKDIR /app
 
 RUN apk add --no-cache docker-cli
+RUN apk add --no-cache bash
 
 COPY --from=builder /app/main .
 COPY .env .

@@ -6,7 +6,7 @@ import (
 )
 
 func ReloadNginxConfig() error {
-	cmd := exec.Command("sh", "/app/update_nginx.sh")
+	cmd := exec.Command("bash", "/app/update_nginx.sh")
 	err := cmd.Run()
 	if err != nil {
 		log.Printf("Error recargando Nginx: %v", err)
