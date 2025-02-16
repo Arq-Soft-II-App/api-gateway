@@ -11,13 +11,20 @@ import (
 )
 
 func Build(env envs.Envs) *gin.Engine {
-
 	engine := gin.Default()
 	engine.Use(CORSMiddleware())
 
 	service := services.NewService(env)
 	controller := controllers.NewController(service)
+
+	dockerService, err := services.NewDockerService()
+	if err != nil {
+		panic(fmt.Sprintf("Error iniciando DockerService: %v", err))
+	}
+	adminController := controllers.NewAdminController(dockerService)
+
 	routes.SetupRoutes(engine, controller)
+	routes.SetupAdminRoutes(engine, adminController)
 
 	return engine
 }

@@ -14,8 +14,13 @@ FROM alpine:latest
 
 WORKDIR /app
 
+RUN apk add --no-cache docker-cli
+
 COPY --from=builder /app/main .
 COPY .env .
+
+COPY update_nginx.sh .
+RUN chmod +x update_nginx.sh
 
 EXPOSE 8000
 
