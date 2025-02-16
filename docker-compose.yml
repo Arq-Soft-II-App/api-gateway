@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  api-gateway:
+    build:
+      context: .  # Cambiado a '.' para indicar la ubicación actual
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_HOST=redis
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+  
+networks:
+  app-network:
+    external: true
