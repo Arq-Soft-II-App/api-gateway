@@ -20,6 +20,7 @@ type CourseServiceInterface interface {
 	UpdateCourse(data courses.CourseDTO) (courses.CourseDTO, error)
 	GetCourseById(id string) (courses.CourseDTO, error)
 	GetCoursesList(courseIDs []string) ([]courses.CourseListDto, error)
+	DeleteCourse(id string) error
 }
 
 func NewCourseService(env envs.Envs) *CourseService {
@@ -142,4 +143,20 @@ func (s *CourseService) GetCourseById(id string) (courses.CourseDTO, error) {
 		CourseCategoryName: backendCourse.CourseCategoryName,
 		RatingAvg:          backendCourse.RatingAvg,
 	}, nil
+}
+
+func (s *CourseService) DeleteCourse(id string) error {
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/%s", s.env.Get("COURSES_API_URL"), id), nil)
+	if err != nil {
+		return errors.NewInternalServerError("Error al eliminar el curso")
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return errors.NewInternalServerError("Error al eliminar el curso")
+	}
+	defer resp.Body.Close()
+
+	return nil
 }

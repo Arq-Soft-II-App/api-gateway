@@ -23,6 +23,7 @@ type CourseControllerInterface interface {
 	CreateCourse(c *gin.Context)
 	UpdateCourse(c *gin.Context)
 	GetCourseById(c *gin.Context)
+	DeleteCourse(c *gin.Context)
 }
 
 func (c *CourseController) CreateCourse(ctx *gin.Context) {
@@ -69,4 +70,16 @@ func (c *CourseController) GetCourseById(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, course)
+}
+
+func (c *CourseController) DeleteCourse(ctx *gin.Context) {
+	courseId := ctx.Param("id")
+
+	err := c.service.DeleteCourse(courseId)
+	if err != nil {
+		ctx.JSON(errors.GetStatusCode(err), err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Curso eliminado"})
 }

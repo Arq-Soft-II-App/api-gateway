@@ -27,6 +27,7 @@ func SetupRoutes(engine *gin.Engine, controller *controllers.Controller) {
 	engine.POST("/courses/create", controller.Courses.CreateCourse)
 	engine.PUT("/courses/update/:cid", middlewares.AuthMiddleware(), controller.Courses.UpdateCourse)
 	engine.GET("/courses/:id", controller.Courses.GetCourseById)
+	engine.DELETE("/courses/:id", controller.Courses.DeleteCourse)
 
 	// Rutas de comentarios
 	engine.POST("/comment", controller.Comments.CreateComment)

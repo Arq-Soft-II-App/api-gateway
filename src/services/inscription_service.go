@@ -34,8 +34,75 @@ func NewInscriptionsService(env envs.Envs, courseService CourseServiceInterface,
 }
 
 func (s *InscriptionService) CreateInscription(data inscriptions.EnrollRequestResponseDto) (inscriptions.EnrollRequestResponseDto, error) {
-	inscriptionsURL := fmt.Sprintf("%senroll", s.env.Get("INSCRIPTIONS_URL"))
+	// Creamos canales para comunicar las goroutines.
+	countCh := make(chan int, 1)                // Canal para recibir la cantidad de inscriptos.
+	courseCh := make(chan courses.CourseDTO, 1) // Canal para recibir la info del curso.
+	errCh := make(chan error, 2)                // Canal para capturar errores, por si alguno se pone loquita.
 
+	// Goroutine para obtener la cantidad de inscriptos.
+	// Esta va a buscar la lista de estudiantes inscriptos y luego contarla.
+	go func() {
+		students, err := s.GetCourseStudents(data.CourseId)
+		if err != nil {
+			errCh <- err // Si algo falla, avisamos por el canal de errores.
+			return
+		}
+		countCh <- len(students) // Mandamos la cantidad de estudiantes.
+	}()
+
+	// Goroutine para obtener la información del curso.
+	// Acá consultamos al servicio de cursos.
+	go func() {
+		course, err := s.courseService.GetCourseById(data.CourseId)
+		if err != nil {
+			errCh <- err // Avisamos si se rompe algo.
+			return
+		}
+		courseCh <- course // Mandamos la info del curso.
+	}()
+
+	// Ahora esperamos a que lleguen ambos mensajes.
+	var inscriptionsCount int
+	var courseInfo courses.CourseDTO
+	received := 0
+	for received < 2 {
+		select {
+		// Si llega la cantidad de inscriptos, la guardamos.
+		case cnt := <-countCh:
+			inscriptionsCount = cnt
+			received++
+		// Si llega la información del curso, la guardamos.
+		case course := <-courseCh:
+			courseInfo = course
+			received++
+		// Si llega un error desde cualquiera de las goroutines, paramos todo y devolvemos el error y a lpm.
+		case err := <-errCh:
+			return inscriptions.EnrollRequestResponseDto{}, err
+		}
+	}
+
+	// Verificamos que el curso tenga capacidad libre.
+	// Es como ver si queda lugar en el bondi: si no hay, avisamos que el curso está lleno.
+	if courseInfo.BaseCourseDto.CourseCapacity <= inscriptionsCount {
+		return inscriptions.EnrollRequestResponseDto{}, errors.NewError("COURSE_FULL", "El curso está completo", http.StatusBadRequest)
+	}
+
+	// Si el que se está inscribiendo es el último que cabe (cantidad de inscriptos == capacidad - 1),
+	// lanzamos otra goroutine para actualizar el estado del curso y marcarlo como lleno (state = false).
+	if inscriptionsCount == courseInfo.BaseCourseDto.CourseCapacity-1 {
+		go func() {
+			falseState := false
+			courseInfo.BaseCourseDto.CourseState = &falseState
+			_, err := s.courseService.UpdateCourse(courseInfo)
+			if err != nil {
+				// Si hay un error al actualizar, lo imprimimos, pero la inscripción ya sigue su curso.
+				fmt.Printf("Error actualizando el estado del curso: %v\n", err)
+			}
+		}()
+	}
+
+	// Preparamos y ejecutamos la inscripción si todo va ok.
+	inscriptionsURL := fmt.Sprintf("%senroll", s.env.Get("INSCRIPTIONS_URL"))
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return inscriptions.EnrollRequestResponseDto{}, errors.NewError("SERIALIZATION_ERROR", "Error al serializar la inscripción", http.StatusInternalServerError)
@@ -59,6 +126,7 @@ func (s *InscriptionService) CreateInscription(data inscriptions.EnrollRequestRe
 		return inscriptions.EnrollRequestResponseDto{}, errors.NewError("DECODE_ERROR", "Error al decodificar la respuesta", http.StatusInternalServerError)
 	}
 
+	// Si todo salió bien, devolvemos la inscripción creada.
 	return createdInscription, nil
 }
 

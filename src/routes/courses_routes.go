@@ -12,4 +12,5 @@ func CoursesRoutes(r *gin.RouterGroup, controller controllers.CourseControllerIn
 	r.PUT("/update", middlewares.AuthMiddleware(), controller.UpdateCourse)
 	r.GET("/", searchController.SearchCourses)
 	r.GET("/:id", controller.GetCourseById)
+	r.DELETE("/:id", controller.DeleteCourse)
 }
