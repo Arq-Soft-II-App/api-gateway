@@ -4,6 +4,7 @@ import (
 	"api-gateway/src/dto/courses"
 	"api-gateway/src/errors"
 	"api-gateway/src/services"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,6 +25,7 @@ type SearchControllerInterface interface {
 }
 
 func (c *SearchController) SearchCourses(ctx *gin.Context) {
+	fmt.Println("Controller: Searching courses...")
 	query := ctx.Query("q")
 	results, err := c.service.SearchCourses(query)
 	if err != nil {

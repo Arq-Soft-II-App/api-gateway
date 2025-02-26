@@ -106,7 +106,7 @@ func (s *CourseService) GetCoursesList(courseIDs []string) ([]courses.CourseList
 		return nil, errors.NewInternalServerError("Error al procesar los IDs")
 	}
 
-	resp, err := http.Post(fmt.Sprintf("%s/getCourseList", s.env.Get("COURSES_API_URL")), "application/json", bytes.NewBuffer(jsonData))
+	resp, err := http.Post(fmt.Sprintf("%s%s", s.env.Get("COURSES_API_URL"), "getCourseList"), "application/json", bytes.NewBuffer(jsonData))
 	fmt.Println("Resp course list", resp)
 	if err != nil {
 		fmt.Println("Error al obtener los cursos:", err)

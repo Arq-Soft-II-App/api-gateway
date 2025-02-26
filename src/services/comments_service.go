@@ -38,7 +38,7 @@ func NewCommentsService(env envs.Envs, usersService UsersServiceInterface) *Comm
 }
 
 func (s *CommentsService) GetCourseComments(courseId string) (comments.GetCommentsResponse, error) {
-	commentsURL := fmt.Sprintf("%s/%s", s.env.Get("COMMENTS_URL"), courseId)
+	commentsURL := fmt.Sprintf("%s%s/%s", s.env.Get("COURSES_API_URL"), "ratings", courseId)
 
 	req, err := http.NewRequest("GET", commentsURL, nil)
 	if err != nil {
@@ -108,7 +108,7 @@ func (s *CommentsService) GetCourseComments(courseId string) (comments.GetCommen
 }
 
 func (s *CommentsService) CreateComment(data comments.CreateCommentDto) (comments.CreateCommentDto, error) {
-	commentsURL := fmt.Sprintf("%s/", s.env.Get("COMMENTS_URL"))
+	commentsURL := fmt.Sprintf("%s%s/", s.env.Get("COURSES_API_URL"), "ratings")
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -136,7 +136,7 @@ func (s *CommentsService) CreateComment(data comments.CreateCommentDto) (comment
 }
 
 func (s *CommentsService) UpdateComment(data comments.CreateCommentDto) (comments.GetCommentsDto, error) {
-	commentsURL := fmt.Sprintf("%s/", s.env.Get("COMMENTS_URL"))
+	commentsURL := fmt.Sprintf("%s%s/", s.env.Get("COURSES_API_URL"), "ratings")
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {

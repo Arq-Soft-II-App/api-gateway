@@ -91,7 +91,7 @@ func (s *InscriptionService) GetMyCourses(userId string) ([]courses.CourseListDt
 		courseIDs = append(courseIDs, inscription.CourseId)
 	}
 
-	// Llamar al servicio de cursos para obtener la información detalladaError al obtener los cursos
+	// Llamar al servicio de cursos para obtener la información detallada
 	coursesList, err := s.courseService.GetCoursesList(courseIDs)
 	if err != nil {
 		fmt.Printf("Error al obtener los cursos: %v\n", err)

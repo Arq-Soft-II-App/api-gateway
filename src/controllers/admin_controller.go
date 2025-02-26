@@ -123,3 +123,63 @@ func (ac *AdminController) RemoveInstance(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"removed": id})
 }
+
+// GetLogs devuelve los logs de los contenedores.
+// Si se envía el query parameter "service", se filtrarán los logs de ese servicio; de lo contrario, se devuelven todos los logs del proyecto "backend".
+// Se puede enviar "since" (en segundos) para filtrar los logs de los últimos N segundos, y opcionalmente "until".
+func (ac *AdminController) GetLogs(c *gin.Context) {
+	// Ejemplo: /admin/logs?service=nginx&since=3600&until=
+	service := c.Query("service")
+	since := c.Query("since")
+	until := c.Query("until")
+
+	logs, err := ac.DockerService.GetLogs(service, since, until)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, logs)
+}
+
+func (ac *AdminController) GetStats(c *gin.Context) {
+
+	id := c.Query("id")
+	if id != "" {
+		stats, err := ac.DockerService.GetContainerStats(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, map[string]interface{}{id: stats})
+		return
+	}
+
+	service := c.Query("service")
+	containers, err := ac.DockerService.ListContainers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	statsMap := make(map[string]interface{})
+	for _, container := range containers {
+		if service != "" {
+			if container.Labels["com.docker.compose.service"] != service {
+				continue
+			}
+		} else {
+			if container.Labels["com.docker.compose.project"] != "backend" {
+				continue
+			}
+		}
+
+		stats, err := ac.DockerService.GetContainerStats(container.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		statsMap[container.ID] = stats
+	}
+
+	c.JSON(http.StatusOK, statsMap)
+}

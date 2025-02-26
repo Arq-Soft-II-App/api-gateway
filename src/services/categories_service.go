@@ -27,7 +27,7 @@ func NewCategoriesService(env envs.Envs) *CategoriesService {
 }
 
 func (s *CategoriesService) CreateCategory(data categories.CreateCategoryDto) (categories.CategoryResponse, error) {
-	url := s.env.Get("CATEGORIES_URL")
+	url := fmt.Sprintf("%s%s", s.env.Get("COURSES_API_URL"), "categories")
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return categories.CategoryResponse{}, errors.NewInternalServerError("Error al convertir los datos a JSON: " + err.Error())
@@ -48,7 +48,7 @@ func (s *CategoriesService) CreateCategory(data categories.CreateCategoryDto) (c
 }
 
 func (s *CategoriesService) GetCategories() ([]categories.CategoryResponse, error) {
-	url := s.env.Get("CATEGORIES_URL")
+	url := fmt.Sprintf("%s%s", s.env.Get("COURSES_API_URL"), "categories")
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, errors.NewInternalServerError("Error al llamar al servicio de categorías: " + err.Error())

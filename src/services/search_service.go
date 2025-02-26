@@ -26,6 +26,7 @@ type SearchServiceInterface interface {
 }
 
 func (s *SearchService) SearchCourses(query string) ([]courses.CourseListDto, error) {
+	fmt.Printf("Service: Searching courses using %s URL...\n", s.env.Get("SEARCH_API_URL"))
 	searchURL := s.env.Get("SEARCH_API_URL")
 	decodedQuery, err := url.QueryUnescape(query)
 	if err != nil {
@@ -54,7 +55,7 @@ func (s *SearchService) SearchCourses(query string) ([]courses.CourseListDto, er
 	}
 
 	type tempCourse struct {
-		ID           string  `json:"_id"`
+		ID           string  `json:"id"`
 		CategoryID   string  `json:"category_id"`
 		CourseName   string  `json:"course_name"`
 		Description  string  `json:"description"`

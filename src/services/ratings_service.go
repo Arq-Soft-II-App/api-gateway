@@ -28,7 +28,7 @@ type RatingsServiceInterface interface {
 }
 
 func (s *RatingsService) NewRating(rating ratings.RatingDTO) (ratings.RatingDTO, error) {
-	ratingsURL := s.env.Get("RATINGS_URL")
+	ratingsURL := fmt.Sprintf("%s%s", s.env.Get("COURSES_API_URL"), "ratings")
 
 	jsonData, err := json.Marshal(rating)
 	if err != nil {
@@ -57,7 +57,7 @@ func (s *RatingsService) NewRating(rating ratings.RatingDTO) (ratings.RatingDTO,
 }
 
 func (s *RatingsService) UpdateRating(rating ratings.RatingDTO) (ratings.RatingDTO, error) {
-	ratingsURL := s.env.Get("RATINGS_URL")
+	ratingsURL := fmt.Sprintf("%s%s", s.env.Get("COURSES_API_URL"), "ratings")
 
 	jsonData, err := json.Marshal(rating)
 	if err != nil {
@@ -86,7 +86,7 @@ func (s *RatingsService) UpdateRating(rating ratings.RatingDTO) (ratings.RatingD
 }
 
 func (s *RatingsService) GetAllRatings() ([]ratings.RatingDTO, error) {
-	ratingsURL := s.env.Get("RATINGS_URL")
+	ratingsURL := fmt.Sprintf("%s%s", s.env.Get("COURSES_API_URL"), "ratings")
 
 	req, err := http.NewRequest("GET", ratingsURL, nil)
 	if err != nil {

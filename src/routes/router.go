@@ -23,7 +23,7 @@ func SetupRoutes(engine *gin.Engine, controller *controllers.Controller) {
 	engine.PUT("/users/update", middlewares.AuthMiddleware(), controller.Users.Update)
 
 	// Rutas de cursos
-	engine.GET("/courses", controller.Search.SearchCourses)
+	engine.GET("/search-courses", controller.Search.SearchCourses)
 	engine.POST("/courses/create", controller.Courses.CreateCourse)
 	engine.PUT("/courses/update/:cid", middlewares.AuthMiddleware(), controller.Courses.UpdateCourse)
 	engine.GET("/courses/:id", controller.Courses.GetCourseById)

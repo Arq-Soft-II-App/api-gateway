@@ -8,7 +8,6 @@ import (
 )
 
 func SetupAdminRoutes(engine *gin.Engine, adminController *controllers.AdminController) {
-	// Creamos un grupo para rutas de admin y aplicamos el middleware de admin
 	adminGroup := engine.Group("/admin")
 	adminGroup.Use(middlewares.AdminAuthMiddleware())
 
@@ -22,4 +21,13 @@ func SetupAdminRoutes(engine *gin.Engine, adminController *controllers.AdminCont
 	adminGroup.DELETE("/instances/:id", adminController.StopInstance)
 	// Endpoint para remover una instancia
 	adminGroup.DELETE("/instances/:id/remove", adminController.RemoveInstance)
+
+	// Endpoint para obtener los logs de un servicio
+	// Ejemplos:
+	//GET /admin/logs?service=nginx&since=3600
+	//GET /admin/logs?since=2025-02-18T15:00:00&until=2025-02-18T16:00:00
+	adminGroup.GET("/logs", adminController.GetLogs)
+
+	// Nuevo endpoint para obtener las estadísticas de recursos de los contenedores
+	adminGroup.GET("/stats", adminController.GetStats)
 }
